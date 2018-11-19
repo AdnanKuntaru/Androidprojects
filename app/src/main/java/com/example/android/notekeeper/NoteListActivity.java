@@ -5,6 +5,8 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.AdapterView;
@@ -15,8 +17,9 @@ import java.util.List;
 
 
 public class NoteListActivity extends AppCompatActivity {
+    private NoteRecyclerAdapter mNoteRecyclerAdapter;
 
-    private ArrayAdapter<NoteInfo> mAdapterNotes;
+    // private ArrayAdapter<NoteInfo> mAdapterNotes;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,26 +42,36 @@ public class NoteListActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        mAdapterNotes.notifyDataSetChanged();
+        mNoteRecyclerAdapter.notifyDataSetChanged();
+        //  mAdapterNotes.notifyDataSetChanged();
     }
 
     private void initializeDisplayContent() {
-        final ListView listNotes = (ListView) findViewById(R.id.list_note);
+//        final ListView listNotes = (ListView) findViewById(R.id.list_note);
+//
+//        List<NoteInfo> notes = DataManager.getInstance().getNotes();
+//        mAdapterNotes = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, notes);
+//
+//        listNotes.setAdapter(mAdapterNotes);
+//
+//        listNotes.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+//            @Override
+//            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+//                Intent intent = new Intent(NoteListActivity.this, NoteActivity.class);
+////                NoteInfo note = (NoteInfo) listNotes.getItemAtPosition(position);
+//                intent.putExtra(NoteActivity.NOTE_POSITION, position);
+//                startActivity(intent);
+//            }
+//        });
+//    }
+//
+//}
+        final RecyclerView recyclerNote = (RecyclerView) findViewById(R.id.list_note);
+        final LinearLayoutManager noteLayoutManager = new LinearLayoutManager(this);
+        recyclerNote.setLayoutManager(noteLayoutManager);
 
-        List<NoteInfo> notes = DataManager.getInstance().getNotes();
-        mAdapterNotes = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, notes);
-
-        listNotes.setAdapter(mAdapterNotes);
-
-        listNotes.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Intent intent = new Intent(NoteListActivity.this, NoteActivity.class);
-//                NoteInfo note = (NoteInfo) listNotes.getItemAtPosition(position);
-                intent.putExtra(NoteActivity.NOTE_POSITION, position);
-                startActivity(intent);
-            }
-        });
+        List<NoteInfo> note = DataManager.getInstance().getNotes();
+        mNoteRecyclerAdapter = new NoteRecyclerAdapter(this, note);
+        recyclerNote.setAdapter(mNoteRecyclerAdapter);
     }
-
 }

@@ -6,6 +6,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -17,6 +18,7 @@ import java.util.List;
 
 
 public class NoteActivity extends AppCompatActivity {
+    private final String TAG = getClass().getSimpleName();
     public static final String NOTE_POSITION = "com.jwhh.jim.notekeeper.NOTE_POSITION";
     public static final String ORIGINAL_NOTE_COURSE_ID = "com.jwhh.jim.notekeeper.ORIGINAL_NOTE_COURSE_ID";
     public static final String ORIGINAL_NOTE_TITLE = "com.jwhh.jim.notekeeper.ORIGINAL_NOTE_TITLE";
@@ -59,6 +61,7 @@ public class NoteActivity extends AppCompatActivity {
 
         if(!mIsNewNote)
             displayNote(mSpinnerCourses, mTextNoteTitle, mTextNoteText);
+        Log.d(TAG,"oncreate");
     }
 
     private void restoreOriginalNoteValues(Bundle savedInstanceState) {
@@ -79,6 +82,7 @@ public class NoteActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         if(mIsCancelling) {
+            Log.i(TAG,"cancelling note at position + " + mNotePosition);
             if(mIsNewNote) {
                 DataManager.getInstance().removeNote(mNotePosition);
             } else {
@@ -87,6 +91,7 @@ public class NoteActivity extends AppCompatActivity {
         } else {
             saveNote();
         }
+        Log.d(TAG,"onPause");
     }
 
     private void storePreviousNoteValues() {
@@ -123,6 +128,7 @@ public class NoteActivity extends AppCompatActivity {
         int position = intent.getIntExtra(NOTE_POSITION, POSITION_NOT_SET);
         mIsNewNote = position == POSITION_NOT_SET;
         if(mIsNewNote) {
+            Log.i(TAG,"mNotePosition:" + mNotePosition);
             createNewNote();
         } else {
             mNote = DataManager.getInstance().getNotes().get(position);
@@ -156,9 +162,29 @@ public class NoteActivity extends AppCompatActivity {
         } else if (id == R.id.action_cancel) {
             mIsCancelling = true;
             finish();
+        } else if (id == R.id.action_next){
+            moveNext();
         }
 
+
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem item = menu.findItem(R.id.action_next);
+        int lastNoteIndex = DataManager.getInstance().getNotes().size() - 1 ;
+        item.setEnabled(mNotePosition<lastNoteIndex);
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    private void moveNext() {
+        saveNote();
+        ++mNotePosition;
+        mNote = DataManager.getInstance().getNotes().get(mNotePosition);
+        saveOriginalNoteValues();
+        displayNote(mSpinnerCourses, mTextNoteTitle,mTextNoteText);
+        invalidateOptionsMenu();
     }
 
     private void sendEmail() {

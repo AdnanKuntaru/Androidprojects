@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.example.android.notekeeper.NoteListActivity">
+    tools:context="com.example.android.notekeeper.MainActivity">
 
     <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
@@ -20,16 +20,15 @@
 
     </android.support.design.widget.AppBarLayout>
 
-    <include layout="@layout/content_note_list" />
+    <include layout="@layout/content_main" />
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab"
+        style="@style/Widget.Design.FloatingActionButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="@dimen/fab_margin"
-        android:tint="@android:color/white"
-        app:srcCompat="@drawable/ic_add_circle_black_24dp"
-        tools:style="@style/AddFab" />
+        app:srcCompat="@drawable/ic_add_circle_black_24dp" />
 
 </android.support.design.widget.CoordinatorLayout>
