@@ -4,31 +4,43 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 /**
- * Created by USER on 10/20/2018.
+ * Created by Jim.
  */
 
 public final class NoteInfo implements Parcelable {
-    private CouraseInfo mCourse;
+    private CourseInfo mCourse;
     private String mTitle;
     private String mText;
+    private int mId;
 
-    public NoteInfo(CouraseInfo course, String title, String text) {
+    public NoteInfo(int id, CourseInfo course, String title, String text) {
+        mId = id;
+        mCourse = course;
+        mTitle = title;
+        mText = text;
+    }
+
+    public NoteInfo(CourseInfo course, String title, String text) {
         mCourse = course;
         mTitle = title;
         mText = text;
     }
 
     private NoteInfo(Parcel source) {
-        mCourse = source.readParcelable(CouraseInfo.class.getClassLoader());
+        mCourse = source.readParcelable(CourseInfo.class.getClassLoader());
         mTitle = source.readString();
         mText = source.readString();
     }
 
-    public CouraseInfo getCourse() {
+    public int getId() {
+        return mId;
+    }
+
+    public CourseInfo getCourse() {
         return mCourse;
     }
 
-    public void setCourse(CouraseInfo course) {
+    public void setCourse(CourseInfo course) {
         mCourse = course;
     }
 
@@ -84,8 +96,8 @@ public final class NoteInfo implements Parcelable {
         dest.writeString(mText);
     }
 
-    public final static Parcelable.Creator<NoteInfo> CREATOR =
-            new Parcelable.Creator<NoteInfo>() {
+    public final static Creator<NoteInfo> CREATOR =
+            new Creator<NoteInfo>() {
 
                 @Override
                 public NoteInfo createFromParcel(Parcel source) {

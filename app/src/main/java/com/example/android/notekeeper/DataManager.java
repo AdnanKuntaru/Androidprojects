@@ -1,25 +1,88 @@
 package com.example.android.notekeeper;
 
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import com.example.android.notekeeper.NoteKeeperDatabaseContract;
+import com.example.android.notekeeper.NoteKeeperDatabaseContract;
+import com.example.android.notekeeper.NoteKeeperDatabaseContract.CourseInfoEntry;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by USER on 10/20/2018.
+ * Created by Jim.
  */
 
 public class DataManager {
     private static DataManager ourInstance = null;
 
-    private List<CouraseInfo> mCourses = new ArrayList<>();
+    private List<CourseInfo> mCourses = new ArrayList<>();
     private List<NoteInfo> mNotes = new ArrayList<>();
 
     public static DataManager getInstance() {
         if(ourInstance == null) {
             ourInstance = new DataManager();
-            ourInstance.initializeCourses();
-            ourInstance.initializeExampleNotes();
+//            ourInstance.initializeCourses();
+//            ourInstance.initializeExampleNotes();
         }
         return ourInstance;
+    }
+
+    public static void loadFromDatabase(NoteKeeperOpenHelper dbHelper) {
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        final String[] courseColumns = {
+                CourseInfoEntry.COLUMN_COURSE_ID,
+                CourseInfoEntry.COLUMN_COURSE_TITLE};
+        final Cursor courseCursor = db.query(CourseInfoEntry.TABLE_NAME, courseColumns,
+                null, null, null, null, CourseInfoEntry.COLUMN_COURSE_TITLE + " DESC");
+        loadCoursesFromDatabase(courseCursor);
+
+        final String[] noteColumns = {
+                NoteKeeperDatabaseContract.NoteInfoEntry.COLUMN_NOTE_TITLE,
+                NoteKeeperDatabaseContract.NoteInfoEntry.COLUMN_NOTE_TEXT,
+                NoteKeeperDatabaseContract.NoteInfoEntry.COLUMN_COURSE_ID,
+                NoteKeeperDatabaseContract.NoteInfoEntry._ID};
+        String noteOrderBy = NoteKeeperDatabaseContract.NoteInfoEntry.COLUMN_COURSE_ID + "," + NoteKeeperDatabaseContract.NoteInfoEntry.COLUMN_NOTE_TITLE;
+        final Cursor noteCursor = db.query(NoteKeeperDatabaseContract.NoteInfoEntry.TABLE_NAME, noteColumns,
+                null, null, null, null, noteOrderBy);
+        loadNotesFromDatabase(noteCursor);
+    }
+
+    private static void loadNotesFromDatabase(Cursor cursor) {
+        int noteTitlePos = cursor.getColumnIndex(NoteKeeperDatabaseContract.NoteInfoEntry.COLUMN_NOTE_TITLE);
+        int noteTextPos = cursor.getColumnIndex(NoteKeeperDatabaseContract.NoteInfoEntry.COLUMN_NOTE_TEXT);
+        int courseIdPos = cursor.getColumnIndex(NoteKeeperDatabaseContract.NoteInfoEntry.COLUMN_COURSE_ID);
+        int idPos = cursor.getColumnIndex(NoteKeeperDatabaseContract.NoteInfoEntry._ID);
+
+        DataManager dm = getInstance();
+        dm.mNotes.clear();
+        while(cursor.moveToNext()) {
+            String noteTitle = cursor.getString(noteTitlePos);
+            String noteText = cursor.getString(noteTextPos);
+            String courseId = cursor.getString(courseIdPos);
+            int id = cursor.getInt(idPos);
+
+            CourseInfo noteCourse = dm.getCourse(courseId);
+            NoteInfo note = new NoteInfo(id, noteCourse, noteTitle, noteText);
+            dm.mNotes.add(note);
+        }
+        cursor.close();
+    }
+
+    private static void loadCoursesFromDatabase(Cursor cursor) {
+        int courseIdPos = cursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_ID);
+        int courseTitlePos = cursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_TITLE);
+
+        DataManager dm = getInstance();
+        dm.mCourses.clear();
+        while(cursor.moveToNext()) {
+            String courseId = cursor.getString(courseIdPos);
+            String courseTitle = cursor.getString(courseTitlePos);
+            CourseInfo course = new CourseInfo(courseId, courseTitle, null);
+
+            dm.mCourses.add(course);
+        }
+        cursor.close();
     }
 
     public String getCurrentUserName() {
@@ -53,19 +116,19 @@ public class DataManager {
         mNotes.remove(index);
     }
 
-    public List<CouraseInfo> getCourses() {
+    public List<CourseInfo> getCourses() {
         return mCourses;
     }
 
-    public CouraseInfo getCourse(String id) {
-        for (CouraseInfo course : mCourses) {
+    public CourseInfo getCourse(String id) {
+        for (CourseInfo course : mCourses) {
             if (id.equals(course.getCourseId()))
                 return course;
         }
         return null;
     }
 
-    public List<NoteInfo> getNotes(CouraseInfo course) {
+    public List<NoteInfo> getNotes(CourseInfo course) {
         ArrayList<NoteInfo> notes = new ArrayList<>();
         for(NoteInfo note:mNotes) {
             if(course.equals(note.getCourse()))
@@ -74,7 +137,7 @@ public class DataManager {
         return notes;
     }
 
-    public int getNo0teCount(CouraseInfo course) {
+    public int getNoteCount(CourseInfo course) {
         int count = 0;
         for(NoteInfo note:mNotes) {
             if(course.equals(note.getCourse()))
@@ -98,7 +161,7 @@ public class DataManager {
     public void initializeExampleNotes() {
         final DataManager dm = getInstance();
 
-        CouraseInfo course = dm.getCourse("android_intents");
+        CourseInfo course = dm.getCourse("android_intents");
         course.getModule("android_intents_m01").setComplete(true);
         course.getModule("android_intents_m02").setComplete(true);
         course.getModule("android_intents_m03").setComplete(true);
@@ -138,7 +201,7 @@ public class DataManager {
                 "Remember to include SerialVersionUID to assure version compatibility"));
     }
 
-    private CouraseInfo initializeCourse1() {
+    private CourseInfo initializeCourse1() {
         List<ModuleInfo> modules = new ArrayList<>();
         modules.add(new ModuleInfo("android_intents_m01", "Android Late Binding and Intents"));
         modules.add(new ModuleInfo("android_intents_m02", "Component activation with intents"));
@@ -146,20 +209,20 @@ public class DataManager {
         modules.add(new ModuleInfo("android_intents_m04", "IntentFilter data tests"));
         modules.add(new ModuleInfo("android_intents_m05", "Working with Platform Features Through Intents"));
 
-        return new CouraseInfo("android_intents", "Android Programming with Intents", modules);
+        return new CourseInfo("android_intents", "Android Programming with Intents", modules);
     }
 
-    private CouraseInfo initializeCourse2() {
+    private CourseInfo initializeCourse2() {
         List<ModuleInfo> modules = new ArrayList<>();
         modules.add(new ModuleInfo("android_async_m01", "Challenges to a responsive user experience"));
         modules.add(new ModuleInfo("android_async_m02", "Implementing long-running operations as a service"));
         modules.add(new ModuleInfo("android_async_m03", "Service lifecycle management"));
         modules.add(new ModuleInfo("android_async_m04", "Interacting with services"));
 
-        return new CouraseInfo("android_async", "Android Async Programming and Services", modules);
+        return new CourseInfo("android_async", "Android Async Programming and Services", modules);
     }
 
-    private CouraseInfo initializeCourse3() {
+    private CourseInfo initializeCourse3() {
         List<ModuleInfo> modules = new ArrayList<>();
         modules.add(new ModuleInfo("java_lang_m01", "Introduction and Setting up Your Environment"));
         modules.add(new ModuleInfo("java_lang_m02", "Creating a Simple App"));
@@ -175,10 +238,10 @@ public class DataManager {
         modules.add(new ModuleInfo("java_lang_m12", "Creating Abstract Relationships with Interfaces"));
         modules.add(new ModuleInfo("java_lang_m13", "Static Members, Nested Types, and Anonymous Classes"));
 
-        return new CouraseInfo("java_lang", "Java Fundamentals: The Java Language", modules);
+        return new CourseInfo("java_lang", "Java Fundamentals: The Java Language", modules);
     }
 
-    private CouraseInfo initializeCourse4() {
+    private CourseInfo initializeCourse4() {
         List<ModuleInfo> modules = new ArrayList<>();
         modules.add(new ModuleInfo("java_core_m01", "Introduction"));
         modules.add(new ModuleInfo("java_core_m02", "Input and Output with Streams and Files"));
@@ -191,7 +254,17 @@ public class DataManager {
         modules.add(new ModuleInfo("java_core_m09", "Adding Type Metadata with Annotations"));
         modules.add(new ModuleInfo("java_core_m10", "Persisting Objects with Serialization"));
 
-        return new CouraseInfo("java_core", "Java Fundamentals: The Core Platform", modules);
+        return new CourseInfo("java_core", "Java Fundamentals: The Core Platform", modules);
+    }
+
+    public int createNewNote(CourseInfo course, String noteTitle, String noteText) {
+        int index = createNewNote();
+        NoteInfo note = getNotes().get(index);
+        note.setCourse(course);
+        note.setTitle(noteTitle);
+        note.setText(noteText);
+
+        return index;
     }
     //endregion
 

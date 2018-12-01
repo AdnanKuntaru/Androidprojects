@@ -1,28 +1,27 @@
 package com.example.android.notekeeper;
 
+import android.database.Cursor;
 import android.os.Parcel;
 import android.os.Parcelable;
 
 import java.util.ArrayList;
 import java.util.List;
-
 /**
- * Created by USER on 10/20/2018.
+ * Created by Jim.
  */
 
-
-public final class CouraseInfo implements Parcelable {
+public final class CourseInfo implements Parcelable {
     private final String mCourseId;
     private final String mTitle;
     private final List<ModuleInfo> mModules;
 
-    public CouraseInfo(String courseId, String title, List<ModuleInfo> modules) {
+    public CourseInfo(String courseId, String title, List<ModuleInfo> modules) {
         mCourseId = courseId;
         mTitle = title;
         mModules = modules;
     }
 
-    private CouraseInfo(Parcel source) {
+    private CourseInfo(Parcel source) {
         mCourseId = source.readString();
         mTitle = source.readString();
         mModules = new ArrayList<>();
@@ -73,7 +72,7 @@ public final class CouraseInfo implements Parcelable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        CouraseInfo that = (CouraseInfo) o;
+        CourseInfo that = (CourseInfo) o;
 
         return mCourseId.equals(that.mCourseId);
 
@@ -95,17 +94,17 @@ public final class CouraseInfo implements Parcelable {
         dest.writeTypedList(mModules);
     }
 
-    public static final Parcelable.Creator<CouraseInfo> CREATOR =
-            new Parcelable.Creator<CouraseInfo>() {
+    public static final Creator<CourseInfo> CREATOR =
+            new Creator<CourseInfo>() {
 
                 @Override
-                public CouraseInfo createFromParcel(Parcel source) {
-                    return new CouraseInfo(source);
+                public CourseInfo createFromParcel(Parcel source) {
+                    return new CourseInfo(source);
                 }
 
                 @Override
-                public CouraseInfo[] newArray(int size) {
-                    return new CouraseInfo[size];
+                public CourseInfo[] newArray(int size) {
+                    return new CourseInfo[size];
                 }
             };
 
