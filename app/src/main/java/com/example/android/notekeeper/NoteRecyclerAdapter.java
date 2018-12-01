@@ -12,12 +12,6 @@ import android.widget.TextView;
 import com.example.android.notekeeper.NoteKeeperDatabaseContract.CourseInfoEntry;
 import com.example.android.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry;
 
-import java.util.List;
-
-/**
- * Created by Jim.
- */
-
 public class NoteRecyclerAdapter extends RecyclerView.Adapter<NoteRecyclerAdapter.ViewHolder> {
 
     private final Context mContext;
@@ -35,7 +29,7 @@ public class NoteRecyclerAdapter extends RecyclerView.Adapter<NoteRecyclerAdapte
     }
 
     private void populateColumnPositions() {
-        if(mCursor == null)
+        if (mCursor == null)
             return;
         // Get column indexes from mCursor
         mCoursePos = mCursor.getColumnIndex(CourseInfoEntry.COLUMN_COURSE_TITLE);
@@ -44,7 +38,7 @@ public class NoteRecyclerAdapter extends RecyclerView.Adapter<NoteRecyclerAdapte
     }
 
     public void changeCursor(Cursor cursor) {
-        if(mCursor != null)
+        if (mCursor != null)
             mCursor.close();
         mCursor = cursor;
         populateColumnPositions();
@@ -68,6 +62,7 @@ public class NoteRecyclerAdapter extends RecyclerView.Adapter<NoteRecyclerAdapte
         holder.mTextTitle.setText(noteTitle);
         holder.mId = id;
     }
+
     @Override
     public int getItemCount() {
         return mCursor == null ? 0 : mCursor.getCount();

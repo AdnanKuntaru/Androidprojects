@@ -2,9 +2,7 @@ package com.example.android.notekeeper;
 
 import android.provider.BaseColumns;
 
-/**
- * Created by Jim.
- */
+
 
 public final class NoteKeeperDatabaseContract {
     private NoteKeeperDatabaseContract() {} // make non-creatable

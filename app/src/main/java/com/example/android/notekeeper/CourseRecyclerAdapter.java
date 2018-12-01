@@ -11,9 +11,7 @@ import android.widget.TextView;
 
 import java.util.List;
 
-/**
- * Created by Jim.
- */
+
 
 public class CourseRecyclerAdapter extends RecyclerView.Adapter<CourseRecyclerAdapter.ViewHolder> {
 
