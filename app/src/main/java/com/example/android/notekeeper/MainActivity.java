@@ -1,19 +1,29 @@
 package com.example.android.notekeeper;
 
 import android.app.LoaderManager;
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
+import android.content.ComponentName;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.PersistableBundle;
+import android.os.StrictMode;
 import android.preference.PreferenceManager;
+import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.view.Gravity;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -32,10 +42,17 @@ import java.util.List;
 
 import static com.example.android.notekeeper.NoteKeeperProviderContract.*;
 
+import com.example.android.notekeeper.NoteKeeperDatabaseContract.CourseInfoEntry;
+import com.example.android.notekeeper.NoteKeeperDatabaseContract.NoteInfoEntry;
+import com.example.android.notekeeper.NoteKeeperProviderContract.Notes;
+
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
         LoaderManager.LoaderCallbacks<Cursor> {
     public static final int LOADER_NOTES = 0;
+    private static final int NOTE_UPLOADER_JOB_ID = 1;
     private NoteRecyclerAdapter mNoteRecyclerAdapter;
     private RecyclerView mRecyclerItems;
     private LinearLayoutManager mNotesLayoutManager;
@@ -49,6 +66,8 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        enableStrictMode();
 
         mDbOpenHelper = new NoteKeeperOpenHelper(this);
 
@@ -76,6 +95,17 @@ public class MainActivity extends AppCompatActivity
         initializeDisplayContent();
     }
 
+    private void enableStrictMode() {
+        if(BuildConfig.DEBUG){
+            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
+                    .detectAll()
+                    .penaltyLog()
+                    .build();
+            StrictMode.setThreadPolicy(policy);
+
+        }
+    }
+
     @Override
     protected void onDestroy() {
         mDbOpenHelper.close();
@@ -85,10 +115,23 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onResume() {
         super.onResume();
-
         getLoaderManager().restartLoader(LOADER_NOTES, null, this);
-
         updateNavHeader();
+
+//        openDrawer();
+    }
+
+    private void openDrawer() {
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+                drawer.openDrawer(Gravity.START);
+            }
+        }, 1000);
+
+
     }
 
     private void loadNotes() {
@@ -170,20 +213,42 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             startActivity(new Intent(this, SettingsActivity.class));
             return true;
+        } else if (id == R.id.action_backup_notes) {
+            backupNotes();
+        } else if (id == R.id.action_upload_notes) {
+            scheduleNoteUpload();
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    private void scheduleNoteUpload() {
+        PersistableBundle extras = new PersistableBundle();
+        extras.putString(NoteUploaderJobService.EXTRA_DATA_URI, Notes.CONTENT_URI.toString());
+
+        ComponentName componentName = new ComponentName(this, NoteUploaderJobService.class);
+        JobInfo jobInfo = new JobInfo.Builder(NOTE_UPLOADER_JOB_ID, componentName)
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                .setExtras(extras)
+                .build();
+
+        JobScheduler jobScheduler = (JobScheduler) getSystemService(JOB_SCHEDULER_SERVICE);
+        jobScheduler.schedule(jobInfo);
+    }
+
+    private void backupNotes() {
+        Intent intent = new Intent(this, NoteBackupService.class);
+        intent.putExtra(NoteBackupService.EXTRA_COURSE_ID, NoteBackup.ALL_COURSES);
+        startService(intent);
     }
 
     @SuppressWarnings("StatementWithEmptyBody")
@@ -211,7 +276,7 @@ public class MainActivity extends AppCompatActivity
     private void handleShare() {
         View view = findViewById(R.id.list_items);
         Snackbar.make(view, "Share to - " +
-                PreferenceManager.getDefaultSharedPreferences(this).getString("user_favorite_social", ""),
+                        PreferenceManager.getDefaultSharedPreferences(this).getString("user_favorite_social", ""),
                 Snackbar.LENGTH_LONG).show();
     }
 
@@ -221,23 +286,23 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public  Loader<Cursor> onCreateLoader(int id, Bundle args) {
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         CursorLoader loader = null;
         if(id == LOADER_NOTES) {
-                    final String[] noteColumns = {
-                            Notes._ID,
-                            NoteInfoEntry.COLUMN_NOTE_TITLE,
-                            CourseInfoEntry.COLUMN_COURSE_TITLE
-                    };
+            final String[] noteColumns = {
+                    Notes._ID,
+                    Notes.COLUMN_NOTE_TITLE,
+                    Notes.COLUMN_COURSE_TITLE
+            };
+            final String noteOrderBy = Notes.COLUMN_COURSE_TITLE +
+                    "," + Notes.COLUMN_NOTE_TITLE;
 
-                    final String noteOrderBy = CourseInfoEntry.COLUMN_COURSE_TITLE +
-                            "," + NoteInfoEntry.COLUMN_NOTE_TITLE;
-                    loader = new CursorLoader(this, Notes.CONTENT_EXPANDED_URI, noteColumns,
-                            null, null, noteOrderBy);
+            loader = new CursorLoader(this, Notes.CONTENT_EXPANDED_URI, noteColumns,
+                    null, null, noteOrderBy);
 
-                }
+        }
         return loader;
-        };
+    }
 
     @Override
     public void onLoadFinished(Loader loader, Cursor data) {

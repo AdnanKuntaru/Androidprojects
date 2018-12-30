@@ -2,31 +2,34 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.android.notekeeper">
 
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.VIBRATE" />
-
+    -
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <activity
+            android:name=".NoteActivity"
+            android:label="@string/title_activity_note"
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".NoteListActivity"
             android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar" />
-        <activity android:name=".NoteActivity" />
+        -
         <activity
             android:name=".MainActivity"
             android:label="@string/title_activity_main"
             android:theme="@style/AppTheme.NoActionBar">
+            -
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        -
         <activity
             android:name=".SettingsActivity"
             android:label="@string/title_activity_settings"
@@ -35,12 +38,24 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.example.android.notekeeper.MainActivity" />
         </activity>
-
         <provider
             android:name=".NoteKeeperProvider"
-            android:authorities="com.example.android.notekeeper.provider"
+            android:authorities="com.jwhh.jim.notekeeper.provider"
+            android:enabled="true"
+            android:exported="true" />
+
+        <service
+            android:name=".NoteBackupService"
+            android:exported="false" />
+        <service
+            android:name=".NoteUploaderJobService"
+            android:enabled="true"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <receiver
+            android:name=".NoteReminderReceiver"
             android:enabled="true"
             android:exported="true" />
     </application>
-
 </manifest>
